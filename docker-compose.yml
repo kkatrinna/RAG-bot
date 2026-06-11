@@ -1,25 +1,133 @@
 version: '3.8'
 
 services:
+  # PostgreSQL база данных
+  postgres:
+    image: postgres:15
+    container_name: etl_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-etl_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-etl_password}
+      POSTGRES_DB: ${POSTGRES_DB:-etl_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-etl_user} -d ${POSTGRES_DB:-etl_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - etl_network
+
+  # Metabase для дашбордов
+  metabase:
+    image: metabase/metabase:latest
+    container_name: etl_metabase
+    ports:
+      - "3000:3000"
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: ${POSTGRES_DB:-etl_db}
+      MB_DB_HOST: postgres
+      MB_DB_PORT: 5432
+      MB_DB_USER: ${POSTGRES_USER:-etl_user}
+      MB_DB_PASS: ${POSTGRES_PASSWORD:-etl_password}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - etl_network
+
+  # Prefect сервер для оркестрации
+  prefect-server:
+    image: prefecthq/prefect:2-latest
+    container_name: etl_prefect_server
+    command: prefect server start --host 0.0.0.0 --port 4200
+    ports:
+      - "4200:4200"
+    environment:
+      PREFECT_UI_API_URL: http://localhost:4200/api
+    volumes:
+      - prefect_data:/root/.prefect
+    networks:
+      - etl_network
+
+  # Prefect воркер (выполняет задачи)
+  prefect-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: etl_prefect_worker
+    command: prefect agent start --pool default
+    environment:
+      PREFECT_API_URL: http://prefect-server:4200/api
+      POSTGRES_USER: ${POSTGRES_USER:-etl_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-etl_password}
+      POSTGRES_DB: ${POSTGRES_DB:-etl_db}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+      prefect-server:
+        condition: service_started
+    volumes:
+      - ./etl:/app/etl
+      - ./logs:/app/logs
+    networks:
+      - etl_network
+
+  # Ollama для RAG бота
   ollama:
     image: ollama/ollama:latest
+    container_name: etl_ollama
     ports:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
     command: serve
+    networks:
+      - etl_network
 
-  streamlit-app:
-    build: .
+  # RAG бот (Streamlit)
+  rag-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.rag
+    container_name: etl_rag_bot
     ports:
       - "8501:8501"
-    volumes:
-      - ./documents:/app/documents
-      - ./chroma_db:/app/chroma_db
-    depends_on:
-      - ollama
     environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
+      OLLAMA_HOST: http://ollama:11434
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-etl_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-etl_password}
+      POSTGRES_DB: ${POSTGRES_DB:-etl_db}
+      POSTGRES_PORT: 5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    volumes:
+      - ./rag_data:/app/documents
+      - ./faiss_index:/app/faiss_index
+    networks:
+      - etl_network
+
+networks:
+  etl_network:
+    driver: bridge
 
 volumes:
+  postgres_data:
+  prefect_data:
   ollama_data:

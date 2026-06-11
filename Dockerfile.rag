@@ -5,6 +5,7 @@ WORKDIR /app
 # Установка системных зависимостей
 RUN apt-get update && apt-get install -y \
     gcc \
+    g++ \
     libpq-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
@@ -13,12 +14,12 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копирование кода ETL
-COPY etl/ ./etl/
-COPY .env ./
+# Копирование кода RAG бота (исправленный путь)
+COPY rag_bot/app.py app.py
 
-# Создание папки для логов
-RUN mkdir -p /app/logs
+# Создание папок
+RUN mkdir -p /app/documents /app/faiss_index
 
-# Запуск Prefect flow
-CMD ["python", "-m", "etl.prefect_flow"]
+EXPOSE 8501
+
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]

@@ -1,7 +1,25 @@
-streamlit==1.32.0
-langchain==0.1.0
-langchain-community==0.0.10
-faiss-cpu==1.8.0
-pypdf==3.17.4
-sentence-transformers==2.2.2
-ollama==0.1.6
+# Core
+polars==1.5.0
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.25
+requests==2.31.0
+python-dotenv==1.0.0
+pandas>=2.1.0
+
+# Orchestration
+prefect==2.19.0
+
+# Logging
+loguru==0.7.2
+
+# RAG
+streamlit>=1.32.0
+langchain>=0.1.0
+langchain-community>=0.0.10
+faiss-cpu>=1.8.0
+pypdf>=3.17.4
+sentence-transformers>=2.2.2
+ollama>=0.1.6
+
+# Visualization
+plotly>=5.18.0
