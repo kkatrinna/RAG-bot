@@ -1,12 +1,18 @@
-# RAG-бот для вопросов по документации
+#  AI Platform: RAG Bot + ETL Pipeline
 
-Бот позволяет загружать PDF/TXT файлы и задавать вопросы по их содержимому с автоматическим цитированием источников.
+##  О проекте
 
-## Технологии
-- LangChain 0.1.0
-- FAISS (векторная БД)
-- Ollama + Llama 3.2
-- Streamlit
+Это полноценная AI-платформа, объединяющая два современных направления:
+
+1. **RAG (Retrieval-Augmented Generation) Bot** — умный чат-бот, который отвечает на вопросы по вашим документам (PDF, TXT) с цитированием источников
+2. **ETL Pipeline** — автоматический сбор данных о погоде и криптовалютах с их последующей визуализацией
+
+Платформа демонстрирует навыки работы с:
+-  LLM (Llama 3, Saiga)
+-  Векторными базами данных (FAISS)
+-  Оркестрацией пайплайнов (Prefect)
+-  Визуализацией данных (Metabase, Plotly)
+-  Контейнеризацией (Docker)
 
 ## Возможности
 - Загрузка PDF и TXT файлов
@@ -18,9 +24,32 @@
 ## Пример работы
 https://pix-up.ru/uploads/img_6a2aad637c9789.53561140_1781181795.jpg
 
-## Запуск
+## Быстрый старт
+
+### Требования
+
+- Python 3.11+
+- Docker Desktop (опционально, для ETL)
+- 8+ GB RAM
+- 10+ GB свободного места
+
+### Установка
+
 ```bash
-ollama serve
-ollama pull nomic-embed-text
-ollama pull llama3.2
-streamlit run app.py
+# Клонирование репозитория
+git clone https://github.com/yourusername/ai-etl-platform.git
+cd ai-etl-platform
+
+# Создание виртуального окружения
+python -m venv .venv
+
+# Активация (Windows)
+.venv\Scripts\activate
+
+# Активация (Linux/Mac)
+source .venv/bin/activate
+
+# Установка зависимостей
+pip install -r requirements.txt
+
+### Установка
